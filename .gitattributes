@@ -1,0 +1,8 @@
+# Normalise to LF in the repository so Windows checkouts never disagree with
+# Linux CI over Prettier's endOfLine check.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.woff binary
+*.woff2 binary
