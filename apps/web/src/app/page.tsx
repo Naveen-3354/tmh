@@ -1,8 +1,16 @@
-import { Database, Download, Gauge, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Compass, Database, Download, Gauge, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 
+import { signInAsDemo } from '@/app/login/actions';
 import { ActivityRings } from '@/components/activity-rings';
 import { MedicalDisclaimer } from '@/components/medical-disclaimer';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { getCurrentUser } from '@/lib/auth';
+
+// Reads the session to decide between "get started" and "open your dashboard",
+// so a signed-in user is never asked to sign in again.
+export const dynamic = 'force-dynamic';
 
 const PRINCIPLES = [
   {
@@ -33,15 +41,26 @@ const RINGS = [
   { value: 0.45, color: 'var(--metric-water)', label: 'Water' },
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await getCurrentUser();
+  const demoEnabled = process.env.NEXT_PUBLIC_DEMO_ENABLED === 'true';
+
   return (
     <>
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-5">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-5 py-5">
         <span className="flex items-center gap-2 font-semibold tracking-tight">
           <ActivityRings rings={RINGS} size={26} />
           tmh
         </span>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href={user ? '/today' : '/login'}
+            className={buttonVariants({ variant: user ? 'default' : 'outline', size: 'sm' })}
+          >
+            {user ? 'Open app' : 'Sign in'}
+          </Link>
+        </div>
       </header>
 
       <main id="main" className="mx-auto w-full max-w-5xl flex-1 px-5 pb-16">
@@ -58,6 +77,32 @@ export default function HomePage() {
               charted clearly, and exportable in full. Built as a working MVP with an MCP server so
               your AI client can read and write the same data.
             </p>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                href={user ? '/today' : '/login'}
+                className={buttonVariants({ size: 'lg', className: 'w-full sm:w-auto' })}
+              >
+                {user ? 'Open your dashboard' : 'Get started — it’s free'}
+                <ArrowRight aria-hidden />
+              </Link>
+
+              {!user && demoEnabled && (
+                <form action={signInAsDemo} className="w-full sm:w-auto">
+                  <Button type="submit" variant="outline" size="lg" className="w-full sm:w-auto">
+                    <Compass aria-hidden />
+                    Explore the demo
+                  </Button>
+                </form>
+              )}
+            </div>
+
+            {!user && (
+              <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                No password to remember — sign in with an email link or Google. The demo is 90 days
+                of sample data, no signup needed.
+              </p>
+            )}
           </div>
 
           <ActivityRings rings={RINGS} size={196} className="mx-auto md:mx-0" />
@@ -84,6 +129,24 @@ export default function HomePage() {
             ))}
           </ul>
         </section>
+
+        {!user && (
+          <section className="mt-10 flex flex-col items-start gap-4 rounded-xl border border-border bg-card/60 p-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-medium tracking-tight">Start tracking in about a minute</h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                Three short setup steps, then your first log. Nothing to install.
+              </p>
+            </div>
+            <Link
+              href="/login"
+              className={buttonVariants({ size: 'lg', className: 'w-full shrink-0 sm:w-auto' })}
+            >
+              Create your account
+              <ArrowRight aria-hidden />
+            </Link>
+          </section>
+        )}
       </main>
 
       <footer className="mx-auto w-full max-w-5xl px-5 pb-10">
