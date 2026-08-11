@@ -94,14 +94,28 @@ describe.skipIf(!DATABASE_CONFIGURED)('row-level security', () => {
   });
 
   it('refuses an insert that claims another user’s id', async () => {
-    await expect(
-      withUserContext(userB, (db) =>
+    let cause: { code?: string; message?: string } | undefined;
+
+    try {
+      await withUserContext(userB, (db) =>
         db
           .insert(waterLogs)
           .values({ userId: userA, occurredAt: new Date(), amountMl: 250 })
           .returning({ id: waterLogs.id }),
-      ),
-    ).rejects.toThrow(/row-level security/i);
+      );
+    } catch (error) {
+      // Drizzle wraps the driver error, so the Postgres detail is on `cause`.
+      cause = (error as { cause?: { code?: string; message?: string } }).cause;
+    }
+
+    expect(cause, 'the insert should have been rejected by RLS').toBeDefined();
+    // 42501 = insufficient_privilege, what a WITH CHECK violation raises.
+    expect(cause?.code).toBe('42501');
+    expect(cause?.message).toMatch(/row-level security/i);
+
+    // And nothing was written.
+    const rows = await withUserContext(userA, (db) => db.select().from(waterLogs));
+    expect(rows).toHaveLength(1);
   });
 
   it('silently affects nothing when updating another user’s row', async () => {
