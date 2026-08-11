@@ -74,6 +74,33 @@ export async function signInWithGoogle(formData: FormData): Promise<void> {
   redirect(data.url as Route);
 }
 
+/**
+ * Signs in to the shared demo account.
+ *
+ * Exists so a stakeholder can look at real-looking data without an inbox or a
+ * sign-up. The credentials never reach the browser — only the boolean that
+ * decides whether to render the button does. The account is ordinary in every
+ * other respect: RLS scopes it to its own rows exactly like any user.
+ */
+export async function signInAsDemo(): Promise<void> {
+  const email = process.env.DEMO_EMAIL;
+  const password = process.env.DEMO_PASSWORD;
+
+  if (!email || !password) {
+    redirect('/login?error=demo');
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    console.error('Demo sign-in failed', error.message);
+    redirect('/login?error=demo');
+  }
+
+  redirect('/today');
+}
+
 export async function signOut(): Promise<void> {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();

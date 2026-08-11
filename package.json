@@ -22,7 +22,8 @@
     "format:check": "prettier --check .",
     "db:generate": "npm run generate -w @tmh/db",
     "db:migrate": "npm run push -w @tmh/db",
-    "db:studio": "npm run studio -w @tmh/db"
+    "db:studio": "npm run studio -w @tmh/db",
+    "db:seed": "npm run seed -w @tmh/db"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

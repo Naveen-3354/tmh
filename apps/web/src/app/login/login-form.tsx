@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, Loader2, Mail } from 'lucide-react';
+import { CheckCircle2, Compass, Loader2, Mail } from 'lucide-react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { sendMagicLink, signInWithGoogle, type LoginState } from './actions';
+import { sendMagicLink, signInAsDemo, signInWithGoogle, type LoginState } from './actions';
 
 const INITIAL: LoginState = { status: 'idle' };
 
@@ -31,7 +31,7 @@ function SubmitButton() {
   );
 }
 
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, demoEnabled }: { next: string; demoEnabled: boolean }) {
   const [state, formAction] = useActionState(sendMagicLink, INITIAL);
 
   if (state.status === 'sent') {
@@ -87,6 +87,19 @@ export function LoginForm({ next }: { next: string }) {
           Continue with Google
         </Button>
       </form>
+
+      {demoEnabled && (
+        <form action={signInAsDemo} className="flex flex-col gap-2">
+          <Button type="submit" variant="ghost" size="lg" className="w-full">
+            <Compass aria-hidden />
+            Explore the demo account
+          </Button>
+          <p className="text-center text-xs leading-relaxed text-muted-foreground">
+            Ninety days of sample data. Shared and resettable — please don&rsquo;t put anything real
+            in it.
+          </p>
+        </form>
+      )}
     </div>
   );
 }

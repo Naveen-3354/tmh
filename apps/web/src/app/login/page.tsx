@@ -21,6 +21,8 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   const params = await searchParams;
   const nextParam = typeof params.next === 'string' ? params.next : '/today';
   const oauthFailed = params.error === 'oauth';
+  const demoFailed = params.error === 'demo';
+  const demoEnabled = process.env.NEXT_PUBLIC_DEMO_ENABLED === 'true';
 
   return (
     <main
@@ -46,7 +48,13 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
         </p>
       )}
 
-      <LoginForm next={nextParam} />
+      {demoFailed && (
+        <p role="alert" className="mb-4 text-sm text-destructive">
+          The demo account isn&rsquo;t available right now. Try an email link instead.
+        </p>
+      )}
+
+      <LoginForm next={nextParam} demoEnabled={demoEnabled} />
 
       <MedicalDisclaimer className="mt-10" />
     </main>

@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "generate": "drizzle-kit generate",
     "push": "tsx src/apply-migrations.ts",
-    "studio": "drizzle-kit studio"
+    "studio": "drizzle-kit studio",
+    "seed": "tsx src/seed.ts"
   },
   "dependencies": {
     "@tmh/shared": "*",
