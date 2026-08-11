@@ -91,3 +91,85 @@ Next.js does not read `.env` files from a monorepo root, which silently produced
 
 **P1-11 — Age is calendar arithmetic against a server-supplied "today".**
 Dividing elapsed milliseconds by 365.2425 drifts around leap days, and calling `Date.now()` during a React render is impure (the React Compiler lint rule caught it). `ageInYears(birthDate, today)` is pure, testable, and resolves the birthday on the correct date in the user's own timezone.
+
+---
+
+## Phase 2 — Logging surfaces
+
+**P2-1 — One quick-add bar, pinned to the bottom, rather than per-type pages.**
+The two-tap rule is only meetable if the entry point is always on screen. Separate log pages would add a navigation step to every entry, which is precisely the friction RESEARCH.md identifies as fatal.
+
+**P2-2 — Native `<dialog>` for the sheets, not a portal library.**
+Focus trapping, Escape, inert background and top-layer stacking come from the platform. Less code, and better behaved when a mobile keyboard opens.
+
+**P2-3 — "Recent" lists are ranked by frequency, not recency.**
+Most logging is repetition. Ranking by how often something has been logged makes the common case one tap; recency only breaks ties.
+
+**P2-4 — Food catalogue results are always per 100 g, with an optional serving shortcut.**
+Silently mixing per-serving and per-100 g values is the single most common source of wildly wrong calorie counts in this category. The basis is explicit in the type and shown in the UI.
+
+**P2-5 — Energy availability outranks provenance in food search.**
+Verified data first was the original rule, but a verified row with no calories cannot be logged. Usability of the row comes first; provenance breaks the tie.
+
+**P2-6 — Application code never supplies `user_id`; inserts pass `sql` + `auth.uid()`.**
+The database fills in the owner from the session claim. Combined with RLS, writing to another user's account is not something the code declines to do — it has no way to express it.
+
+**P2-7 — Failed writes are returned, not thrown.**
+An error boundary would lose the entry the user just typed. Every action returns a discriminated result so the client can roll back its optimistic update and show why.
+
+## Phase 3 — Trends, insights, data ownership
+
+**P3-1 — Missing days are `null`, never `0`, and charts do not connect across them.**
+An unlogged day rendered as a drop to zero is a lie about the data — and this app is specifically for people who miss days.
+
+**P3-2 — Insight thresholds are code, not copy.**
+Minimum five observations per group, a minimum effect size, and mandatory sample-size disclosure. A test asserts that no insight string contains prescriptive or diagnostic language, so §8 is enforced by CI rather than by reviewer memory.
+
+**P3-3 — Silence is a valid output.**
+When nothing clears the threshold the UI says there is not enough data yet. Padding with a vague observation would train users to ignore the section.
+
+**P3-4 — Hand-written RFC 4180 CSV reader instead of a dependency.**
+The failure mode of a naive `split(',')` is silent column shifting on any food named "Yoghurt, Greek". The reader is ~80 lines and has 17 tests.
+
+**P3-5 — Import validates per row and skips failures with a line number.**
+A 400-row export with two typos should import 398 rows, not zero.
+
+**P3-6 — Deletion cascades from `auth.users` rather than soft-deleting.**
+"Delete my account" has to mean it. The FKs in migration 0001 are what make that true.
+
+## Phase 4 — MCP
+
+**P4-1 — One factory builds both transports.**
+`createTmhServer` is called by the hosted route and the stdio binary alike, so the two surfaces cannot drift apart.
+
+**P4-2 — Tool inputs are the shared Zod schemas verbatim, refinements included.**
+Not copies, not re-derived shapes. A value rejected by the web form is rejected by the tool, including cross-field rules like "only blood pressure takes a second value".
+
+**P4-3 — Timestamps in schemas are ISO strings that transform to Dates, not `z.coerce.date()`.**
+Forced by MCP: tool definitions must serialise to JSON Schema, and a Zod date cannot. `tools/list` failed outright until this changed. Documented in `docs/MCP.md` so the next tool does not reintroduce it.
+
+**P4-4 — The remote endpoint is stateless.**
+Each request builds its own server and resolves its own token. Suits serverless, where no instance is guaranteed to see the next request, and it makes revocation take effect immediately.
+
+**P4-5 — Tokens are opaque, hashed at rest, and shown once.**
+32 random bytes behind a `tmh_pat_` prefix so they are greppable in a leak. Only a SHA-256 hash is stored, so a database dump yields no working credentials.
+
+**P4-6 — Revoked, not deleted.**
+The connections list stays an honest record of what existed and when it was last used.
+
+**P4-7 — API routes authenticate themselves and are never redirected by the proxy.**
+`/api/mcp` uses a bearer token, so a cookie check would reject every valid client — it was returning 307s to an HTML login page. Beyond that, a machine caller deserves a 401 with a JSON body.
+
+## Phase 5 — Delivery
+
+**P5-1 — Playwright asserts the two-tap claim, not merely that a write succeeds.**
+The test opens the sheet, taps one preset, and asserts the dashboard total changed — so a regression that adds a confirm step fails the suite.
+
+**P5-2 — End-to-end tests are not wired into CI.**
+They need a live seeded database, and putting a production connection string into CI secrets for an MVP is a worse trade than running them locally. `npm run test:e2e` is documented instead.
+
+**P5-3 — The offline shell cannot queue writes.**
+Silently queuing health data risks committing it against the wrong day once connectivity returns. Failing loudly while offline is the safer behaviour; a proper queue needs an explicit pending state, which is listed in LIMITATIONS.md as future work.
+
+**P5-4 — Lighthouse was not run, and the README does not claim a score.**
+The Browser pane was unavailable in the build environment. The structural work is done, but an unverified number is worse than an acknowledged gap.
