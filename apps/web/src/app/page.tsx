@@ -1,5 +1,6 @@
 import { ArrowRight, Compass, Database, Download, Gauge, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { signInAsDemo } from '@/app/login/actions';
 import { ActivityRings } from '@/components/activity-rings';
@@ -41,7 +42,19 @@ const RINGS = [
   { value: 0.45, color: 'var(--metric-water)', label: 'Water' },
 ] as const;
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: PageProps<'/'>) {
+  const params = await searchParams;
+
+  // Safety net. If Supabase's redirect allowlist does not match the callback
+  // URL, it falls back to the Site URL *silently* and lands the user here with
+  // `?code=…` and no session — which looks exactly like sign-in doing nothing.
+  // Forwarding the code to the real handler makes the flow work even when the
+  // allowlist is misconfigured, instead of failing without a trace.
+  const code = typeof params.code === 'string' ? params.code : null;
+  if (code) {
+    redirect(`/auth/callback?code=${encodeURIComponent(code)}`);
+  }
+
   const user = await getCurrentUser();
   const demoEnabled = process.env.NEXT_PUBLIC_DEMO_ENABLED === 'true';
 

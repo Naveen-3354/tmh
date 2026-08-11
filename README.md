@@ -92,7 +92,9 @@ npm run dev
 1. **Import the repo** at [vercel.com/new](https://vercel.com/new). Vercel detects Next.js; leave the build settings alone — the monorepo root is correct because the root `package.json` delegates to `apps/web`.
 2. **Set the root directory** to `apps/web` if the build cannot find the app.
 3. **Add environment variables** (Settings → Environment Variables) — the same list as above, with `NEXT_PUBLIC_SITE_URL` set to your deployed origin, e.g. `https://tmh.vercel.app`. Use the **transaction pooler** connection string; serverless functions exhaust direct connections.
-4. **Point Supabase at the deployment**: Authentication → URL Configuration → set Site URL to your Vercel origin and add `https://<origin>/auth/callback` and `https://<origin>/auth/confirm` to the redirect allowlist. Magic links and Google sign-in fail silently without this.
+4. **Point Supabase at the deployment**: Authentication → URL Configuration → set Site URL to your Vercel origin, and add `https://<origin>/auth/**` to the redirect allowlist. The wildcard covers both `/auth/callback` and `/auth/confirm`.
+
+   When a redirect URL is not allowlisted, Supabase falls back to the Site URL **silently** — the user lands on `/?code=…` with no session and no error message, which looks exactly like sign-in doing nothing. The app forwards a stray `?code=` to the real handler as a safety net, but the allowlist should still be right.
 5. **Deploy**, then run `npm run db:seed` locally once against the same database to populate the demo account.
 
 Everything stays inside free tiers — see [LIMITATIONS.md](LIMITATIONS.md) for the ceilings.

@@ -1,10 +1,11 @@
 'use server';
 
 import type { Route } from 'next';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
-import { safeNextPath } from '@/lib/redirects';
+import { POST_AUTH_COOKIE_OPTIONS, POST_AUTH_NEXT_COOKIE, safeNextPath } from '@/lib/redirects';
 import { siteUrl } from '@/lib/supabase/config';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -18,6 +19,15 @@ const emailSchema = z.object({
   next: z.string().optional(),
 });
 
+/**
+ * Stash the post-auth destination in a cookie so the redirect URL handed to
+ * Supabase stays constant and allowlistable. See POST_AUTH_NEXT_COOKIE.
+ */
+async function rememberNext(next: string | undefined): Promise<void> {
+  const store = await cookies();
+  store.set(POST_AUTH_NEXT_COOKIE, safeNextPath(next), POST_AUTH_COOKIE_OPTIONS);
+}
+
 /** Sends a magic link. Never reveals whether the address already has an account. */
 export async function sendMagicLink(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = emailSchema.safeParse({
@@ -30,13 +40,13 @@ export async function sendMagicLink(_prev: LoginState, formData: FormData): Prom
   }
 
   const supabase = await createSupabaseServerClient();
-  const nextPath = safeNextPath(parsed.data.next);
+  await rememberNext(parsed.data.next);
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${siteUrl()}/auth/confirm?next=${encodeURIComponent(nextPath)}`,
+      emailRedirectTo: `${siteUrl()}/auth/confirm`,
     },
   });
 
@@ -56,12 +66,12 @@ export async function sendMagicLink(_prev: LoginState, formData: FormData): Prom
 /** Starts the Google OAuth handshake. */
 export async function signInWithGoogle(formData: FormData): Promise<void> {
   const supabase = await createSupabaseServerClient();
-  const nextPath = safeNextPath(formData.get('next')?.toString());
+  await rememberNext(formData.get('next')?.toString());
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${siteUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      redirectTo: `${siteUrl()}/auth/callback`,
     },
   });
 
