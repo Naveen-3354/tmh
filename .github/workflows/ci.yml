@@ -48,3 +48,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build MCP stdio binary
+        run: npm run build:mcp

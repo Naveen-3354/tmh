@@ -11,6 +11,19 @@ function isPublic(pathname: string): boolean {
 }
 
 /**
+ * API routes authenticate themselves and must never be redirected.
+ *
+ * Two reasons. `/api/mcp` authenticates with a bearer token rather than a
+ * session cookie, so a cookie check here would reject every valid client. And
+ * for the cookie-based routes, a machine caller deserves a 401 with a JSON
+ * body, not a 307 to an HTML login page — which is exactly what an MCP client
+ * or a curl script would choke on.
+ */
+function isSelfAuthenticating(pathname: string): boolean {
+  return pathname.startsWith('/api/');
+}
+
+/**
  * Refreshes the Supabase session cookie and gates private routes.
  *
  * Called from `proxy.ts` — Next 16 renamed the `middleware` convention to
@@ -44,7 +57,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
   const { pathname } = request.nextUrl;
 
-  if (!user && !isPublic(pathname)) {
+  if (!user && !isPublic(pathname) && !isSelfAuthenticating(pathname)) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = '/login';
     redirect.searchParams.set('next', pathname);

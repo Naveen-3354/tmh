@@ -14,9 +14,19 @@ import { z } from 'zod';
 
 import { ACTIVITY_INTENSITIES, ACTIVITY_SLUGS } from '../activities';
 
-/** An instant. Accepts an ISO string or a Date; defaults to now at the call site. */
-export const instantSchema = z.coerce
-  .date()
+/**
+ * An instant, given as an ISO 8601 string and parsed to a Date.
+ *
+ * Deliberately a string rather than `z.coerce.date()`. These schemas are also
+ * the MCP tool input schemas, and every tool definition has to be expressible
+ * as JSON Schema — a Zod date is not, and `tools/list` fails outright with
+ * "Date cannot be represented in JSON Schema". A string with a transform
+ * advertises `type: "string"` while still handing callers a real Date.
+ */
+export const instantSchema = z
+  .string()
+  .refine((value) => !Number.isNaN(Date.parse(value)), 'Use an ISO 8601 timestamp.')
+  .transform((value) => new Date(value))
   .describe('ISO 8601 timestamp, e.g. 2026-08-11T09:30:00Z. Defaults to now.');
 
 export const optionalInstantSchema = instantSchema.optional();

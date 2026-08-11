@@ -7,8 +7,11 @@ import { MedicalDisclaimer } from '@/components/medical-disclaimer';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { buttonVariants } from '@/components/ui/button';
 import { getProfileAndGoals } from '@/lib/queries/profile';
+import { listApiTokens } from '@/lib/queries/tokens';
+import { siteUrl } from '@/lib/supabase/config';
 import { formatHeight, formatVolume } from '@tmh/shared';
 
+import { Connections } from './connections';
 import { DangerZone, ImportForm } from './data-tools';
 
 export const metadata: Metadata = {
@@ -19,7 +22,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  const { profile, goals } = await getProfileAndGoals();
+  const [{ profile, goals }, tokens] = await Promise.all([getProfileAndGoals(), listApiTokens()]);
   if (!profile) redirect('/login');
   if (!profile.onboardingCompletedAt) redirect('/onboarding');
 
@@ -139,6 +142,8 @@ export default async function SettingsPage() {
           </p>
           <ImportForm />
         </section>
+
+        <Connections tokens={tokens} mcpUrl={`${siteUrl()}/api/mcp`} />
 
         <div className="mt-4">
           <DangerZone />
