@@ -27,6 +27,16 @@ export const noteSchema = z.string().trim().max(2000).optional();
 export const ENTRY_SOURCES = ['manual', 'mcp', 'import', 'demo'] as const;
 export type EntrySource = (typeof ENTRY_SOURCES)[number];
 
+/**
+ * Log types that CSV import understands.
+ *
+ * Lives here rather than beside the import action because a `'use server'`
+ * module may only export async functions — exporting a plain array from one
+ * hands the client an action reference instead of the value.
+ */
+export const IMPORTABLE_TYPES = ['water', 'activity', 'food', 'sleep', 'vitals', 'mood'] as const;
+export type ImportableType = (typeof IMPORTABLE_TYPES)[number];
+
 // ---------------------------------------------------------------------------
 // Hydration
 // ---------------------------------------------------------------------------

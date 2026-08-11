@@ -468,7 +468,6 @@ interface DayPlan {
  */
 function planDays(today: DayKey): DayPlan[] {
   const plans: DayPlan[] = [];
-  let previousSleepMinutes = 450;
 
   for (let offset = DAYS - 1; offset >= 0; offset -= 1) {
     const day = addDays(today, -offset);
@@ -479,7 +478,11 @@ function planDays(today: DayKey): DayPlan[] {
     const shortNight = chance(isWeekend ? 0.08 : 0.22);
     const sleepMinutes = shortNight ? intBetween(280, 355) : intBetween(400, isWeekend ? 540 : 495);
 
-    const sleepDeficit = Math.max(0, 420 - previousSleepMinutes) / 60;
+    // Derived from *this* row's sleep, not the previous row's. Sleep is
+    // attributed to the morning you woke up, so day N's sleep record already
+    // is the night before day N — using the previous row would build in a
+    // phantom one-day lag that no correct query could ever find.
+    const sleepDeficit = Math.max(0, 420 - sleepMinutes) / 60;
 
     const mood = Math.min(
       5,
@@ -499,8 +502,6 @@ function planDays(today: DayKey): DayPlan[] {
       steps,
       trained: chance(isWeekend ? 0.5 : 0.42) && sleepDeficit < 1.5,
     });
-
-    previousSleepMinutes = sleepMinutes;
   }
 
   return plans;

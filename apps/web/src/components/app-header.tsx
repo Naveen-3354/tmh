@@ -1,10 +1,11 @@
 import { LogOut } from 'lucide-react';
-
-import { ActivityRings } from '@/components/activity-rings';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 import { signOut } from '@/app/login/actions';
+import { ActivityRings } from '@/components/activity-rings';
+import { NavLink } from '@/components/nav-link';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { Button } from '@/components/ui/button';
 
 const MARK = [
   { value: 0.82, color: 'var(--metric-move)', label: 'Move' },
@@ -15,14 +16,23 @@ const MARK = [
 export function AppHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between px-5 py-3">
-        <span className="flex items-center gap-2 font-semibold tracking-tight">
+      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-5 py-3">
+        <Link
+          href="/today"
+          className="flex shrink-0 items-center gap-2 font-semibold tracking-tight"
+        >
           <ActivityRings rings={MARK} size={24} />
-          tmh
-        </span>
+          <span className="sr-only sm:not-sr-only">tmh</span>
+        </Link>
 
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
+        <nav aria-label="Main" className="flex min-w-0 items-center gap-1">
+          <NavLink href="/today">Today</NavLink>
+          <NavLink href="/trends">Trends</NavLink>
+          <NavLink href="/settings">Settings</NavLink>
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <ThemeToggle className="hidden sm:inline-flex" />
           <form action={signOut}>
             <Button
               type="submit"
