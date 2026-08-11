@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   addDays,
+  ageInYears,
   dayKeyRange,
   dayRangeUtc,
   diffDays,
@@ -111,6 +112,24 @@ describe('day key arithmetic', () => {
     expect(isDayKey('2026-1-1')).toBe(false);
     expect(isDayKey('2026-01-01')).toBe(true);
     expect(() => addDays('nonsense', 1)).toThrow(/Invalid day key/);
+  });
+});
+
+describe('ageInYears', () => {
+  it('counts whole years', () => {
+    expect(ageInYears('1990-06-15', '2026-06-15')).toBe(36);
+    expect(ageInYears('1990-06-15', '2026-08-10')).toBe(36);
+  });
+
+  it('does not count a birthday that has not happened yet this year', () => {
+    expect(ageInYears('1990-12-25', '2026-08-10')).toBe(35);
+    expect(ageInYears('1990-06-16', '2026-06-15')).toBe(35);
+  });
+
+  it('handles a 29 February birthday without drifting', () => {
+    // Born on a leap day; in a non-leap year the birthday counts from 1 March.
+    expect(ageInYears('2000-02-29', '2026-02-28')).toBe(25);
+    expect(ageInYears('2000-02-29', '2026-03-01')).toBe(26);
   });
 });
 

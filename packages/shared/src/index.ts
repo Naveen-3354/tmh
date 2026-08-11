@@ -9,3 +9,4 @@ export * from './activities';
 export * from './calc/energy';
 export * from './calc/macros';
 export * from './calc/streaks';
+export * from './schemas/profile';

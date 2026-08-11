@@ -2,9 +2,12 @@
 
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import { cn } from '@/lib/utils';
+
+/** The mount state never changes after hydration, so there is nothing to subscribe to. */
+const subscribeToNothing = () => () => {};
 
 const OPTIONS = [
   { value: 'light', label: 'Light', Icon: Sun },
@@ -14,11 +17,15 @@ const OPTIONS = [
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  // The server cannot know the resolved theme, so selection state is only
-  // rendered after hydration to avoid a mismatch.
-  useEffect(() => setMounted(true), []);
+  // The server cannot know the stored theme, so selection state is only
+  // rendered after hydration. useSyncExternalStore gives a different snapshot
+  // on server and client without setting state inside an effect.
+  const mounted = useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
 
   return (
     <div

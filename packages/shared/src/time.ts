@@ -150,6 +150,23 @@ export function dayKeyRange(from: DayKey, to: DayKey): DayKey[] {
   return Array.from({ length: span + 1 }, (_, index) => addDays(from, index));
 }
 
+/**
+ * Whole years between two calendar days.
+ *
+ * Calendar arithmetic, not a division by 365.2425 — so a birthday is reached
+ * on the correct date regardless of leap years. Both arguments are explicit
+ * so this stays pure and can run during a React render.
+ */
+export function ageInYears(birthDate: DayKey, today: DayKey): number {
+  const born = parseDayKey(birthDate);
+  const now = parseDayKey(today);
+  let age = now.year - born.year;
+  const hasHadBirthday =
+    now.month > born.month || (now.month === born.month && now.day >= born.day);
+  if (!hasHadBirthday) age -= 1;
+  return age;
+}
+
 /** Validate an IANA zone without throwing on the caller's behalf. */
 export function isValidTimeZone(timeZone: string): boolean {
   try {
