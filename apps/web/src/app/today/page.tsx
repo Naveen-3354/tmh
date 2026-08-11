@@ -5,7 +5,9 @@ import { redirect } from 'next/navigation';
 import { ActivityRings } from '@/components/activity-rings';
 import { AppHeader } from '@/components/app-header';
 import { MedicalDisclaimer } from '@/components/medical-disclaimer';
+import { QuickAddBar } from '@/components/quick-add/quick-add-bar';
 import { getProfile } from '@/lib/queries/profile';
+import { getDosesToday, getRecentActivities, getRecentFoods } from '@/lib/queries/recent';
 import { getDailySummary, type DailySummary } from '@/lib/queries/summary';
 
 export const metadata: Metadata = {
@@ -40,7 +42,12 @@ export default async function TodayPage() {
   if (!profile) redirect('/login');
   if (!profile.onboardingCompletedAt) redirect('/onboarding');
 
-  const summary = await getDailySummary();
+  const [summary, recentFoods, recentActivities, doses] = await Promise.all([
+    getDailySummary(),
+    getRecentFoods(),
+    getRecentActivities(),
+    getDosesToday(profile.timezone),
+  ]);
 
   const rings = [
     {
@@ -158,6 +165,13 @@ export default async function TodayPage() {
 
         <MedicalDisclaimer className="mt-8" />
       </main>
+
+      <QuickAddBar
+        recentFoods={recentFoods}
+        recentActivities={recentActivities}
+        doses={doses}
+        timezone={summary.timezone}
+      />
     </>
   );
 }

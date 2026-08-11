@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 
 import { ServiceWorkerRegistrar } from '@/components/service-worker-registrar';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ToastProvider } from '@/components/ui/toast';
 
 import './globals.css';
 
@@ -71,7 +72,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           >
             Skip to content
           </a>
-          {children}
+          <ToastProvider>{children}</ToastProvider>
           <ServiceWorkerRegistrar />
         </ThemeProvider>
       </body>
