@@ -173,3 +173,31 @@ Silently queuing health data risks committing it against the wrong day once conn
 
 **P5-4 — Lighthouse was not run, and the README does not claim a score.**
 The Browser pane was unavailable in the build environment. The structural work is done, but an unverified number is worse than an acknowledged gap.
+
+---
+
+## Camera food logging
+
+**C-1 — Barcode first, photo second.**
+The camera tries an on-device barcode scan before offering photo recognition. For a packaged product a barcode is not merely more private, it is *more accurate* — it resolves to an exact catalogue entry rather than a guess at what is on the plate.
+
+**C-2 — Barcode decoding never leaves the device, and no image is created.**
+Frames are decoded in the browser and discarded; only the resulting number is sent. Native `BarcodeDetector` where it exists, ZXing-wasm (`barcode-detector`) elsewhere — loaded lazily, so browsers with the native API never download it. Without it, iOS Safari would have had no scanner at all, which is exactly where a phone demo happens.
+
+**C-3 — Photo recognition is a documented exception to §8, behind two switches.**
+The brief says lookups send query terms only. A photograph is materially more than that, so it never happens unless the deployment sets `GEMINI_API_KEY` **and** the user opts in (`profiles.photo_recognition_enabled`, default false). Consent is asked in context, at the moment of first use, and revocable in Settings. Unset key means the feature is simply absent, not broken.
+
+**C-4 — The image is never stored.**
+Held in memory, sent, discarded. No column, no bucket, no log row referencing it. Only the confirmed food names and portions persist.
+
+**C-5 — The model identifies; the catalogues supply the nutrition.**
+Gemini is asked what the food is and roughly how much — things it is good at. It is not trusted for calorie or macro figures. Each recognised name is looked up in USDA/Open Food Facts and scaled to the estimated portion, so a logged entry carries verified data wherever a match exists. Model figures are a fallback, and the UI labels them "estimated".
+
+**C-6 — Nothing is logged without confirmation.**
+Recognition produces a review list with editable names, editable gram amounts, per-item include toggles and a visible confidence level. A guess must never write itself into a health record.
+
+**C-7 — The image is downscaled to a 900 px long edge before upload.**
+Ample for recognition, and it keeps the request well inside serverless body limits while reducing what is transmitted.
+
+**C-8 — `Sheet` distinguishes a programmatic close from a dismissal.**
+`dialog.close()` fires the same `close` event as pressing Escape. Treating both as a dismissal broke every sheet-to-sheet handoff: opening the camera from the food sheet closed the first dialog, whose `close` event then cleared the state that had just opened the second. Found by testing the handoff, not by reading the code.

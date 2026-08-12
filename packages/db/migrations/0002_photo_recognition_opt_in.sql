@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "photo_recognition_enabled" boolean DEFAULT false NOT NULL;

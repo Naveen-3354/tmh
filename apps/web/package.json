@@ -16,6 +16,7 @@
     "@tmh/db": "*",
     "@tmh/mcp-core": "*",
     "@tmh/shared": "*",
+    "barcode-detector": "^3.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",

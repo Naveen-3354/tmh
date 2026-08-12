@@ -20,3 +20,4 @@ export * from './schemas/logs';
 export * from './food/types';
 export * from './food/normalize';
 export * from './food/search';
+export * from './food/vision';

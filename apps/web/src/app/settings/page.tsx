@@ -1,11 +1,12 @@
-import { Download, FileJson, FileSpreadsheet } from 'lucide-react';
+import { Camera, Download, FileJson, FileSpreadsheet } from 'lucide-react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { setPhotoRecognition } from '@/app/actions/preferences';
 import { AppHeader } from '@/components/app-header';
 import { MedicalDisclaimer } from '@/components/medical-disclaimer';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { getProfileAndGoals } from '@/lib/queries/profile';
 import { listApiTokens } from '@/lib/queries/tokens';
 import { siteUrl } from '@/lib/supabase/config';
@@ -27,6 +28,7 @@ export default async function SettingsPage() {
   if (!profile.onboardingCompletedAt) redirect('/onboarding');
 
   const units = profile.unitSystem;
+  const photoRecognitionConfigured = Boolean(process.env.GEMINI_API_KEY);
 
   return (
     <>
@@ -96,6 +98,52 @@ export default async function SettingsPage() {
             <p className="text-sm text-muted-foreground">Follows your system setting by default.</p>
             <ThemeToggle />
           </div>
+        </section>
+
+        <section
+          aria-labelledby="photo-heading"
+          className="mt-4 rounded-xl border border-border bg-card p-5"
+        >
+          <h2 id="photo-heading" className="flex items-center gap-2 font-medium tracking-tight">
+            <Camera aria-hidden className="size-4 text-primary" />
+            Photo food identification
+          </h2>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+            Everything else here keeps your data in your account &mdash; food lookups send only a
+            search term. This is the one exception: identifying a meal from a photo sends the image
+            to Google&rsquo;s Gemini API. The photo is never stored by us, and barcode scanning
+            always works on your device without it.
+          </p>
+
+          {photoRecognitionConfigured ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="flex-1 text-sm">
+                Currently{' '}
+                <span className={profile.photoRecognitionEnabled ? 'text-primary' : 'font-medium'}>
+                  {profile.photoRecognitionEnabled ? 'on' : 'off'}
+                </span>
+                .
+              </p>
+              <form action={setPhotoRecognition}>
+                <input
+                  type="hidden"
+                  name="enabled"
+                  value={profile.photoRecognitionEnabled ? 'false' : 'true'}
+                />
+                <Button
+                  type="submit"
+                  variant={profile.photoRecognitionEnabled ? 'outline' : 'default'}
+                >
+                  {profile.photoRecognitionEnabled ? 'Turn off' : 'Turn on'}
+                </Button>
+              </form>
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">
+              Not available on this deployment &mdash; no recognition provider is configured.
+              Barcode scanning still works.
+            </p>
+          )}
         </section>
 
         <section

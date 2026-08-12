@@ -11,7 +11,7 @@ Worth stating plainly, because the rest of this document is caveats.
 - Auth (magic link + Google), onboarding, and all seven log types write to a real Postgres under row-level security.
 - The MCP server runs on both transports and was exercised end to end against the live database — including a two-token isolation check.
 - Export, CSV import, and account deletion all do what they say. Deletion cascades from `auth.users`; it is not a flag.
-- 129 unit tests, 5 Playwright end-to-end tests, and a 7-case RLS integration suite.
+- 129 unit tests, 7 Playwright end-to-end tests, and a 7-case RLS integration suite.
 
 ---
 
@@ -20,7 +20,8 @@ Worth stating plainly, because the rest of this document is caveats.
 | Area | Status |
 |---|---|
 | **Google Fit / Health Connect import** | **Not built.** The brief listed it as optional. `step_entries` is shaped for it — a daily total keyed `(user_id, day, source)` so re-imports are idempotent — but nothing fetches from Google. Steps are entered manually. |
-| **Barcode scanning** | Lookup by barcode works (`lookupBarcode`, verified against a real product). There is **no camera scanner UI** — the MCP tool and the API accept a barcode, but the app has no "point your phone at it" flow. |
+| **Barcode scanning** | **Built.** On-device scanning via `BarcodeDetector`, with a ZXing-wasm polyfill for iOS Safari, plus manual entry when the camera is unavailable or blocked. Verified end to end against a real product. |
+| **Photo food recognition** | **Built, but off unless configured.** Needs `GEMINI_API_KEY` *and* a per-user opt-in. Two caveats: portion estimates from a photo are rough — treat them as a starting point to edit, not a measurement — and the recognition path has only been tested against the error and gating branches here, because this environment has no camera and no key. Exercise it on a real phone before demoing it. |
 | **Medication reminders** | Medications, schedules and adherence tracking exist and work. There are **no notifications** — the PWA service worker has push plumbing but nothing schedules or sends anything. "Reminder" in the brief is delivered as "a list of today's doses you can tick off". |
 | **Medication management UI** | Doses can be marked taken/skipped, and medications can be created via the database or MCP, but there is **no add/edit medication screen**. The seeded account has one. |
 | **Profile & goal editing** | Settings **displays** profile and targets read-only. Changing them after onboarding requires the database. This is the most visible gap for a real user. |
@@ -79,7 +80,7 @@ Worth stating plainly, because the rest of this document is caveats.
 5. **A daily rollup table** written on log, replacing the seven-query trends read.
 6. **Offline write queue** with an explicit "logged offline, will sync" state and a visible pending count — never silent.
 7. **Google Fit import**, using the table shape that is already in place.
-8. **Camera barcode scanning**, which is the last big logging-friction win.
+8. **A confirmation step for photo portions that learns** — the estimates are rough, and the obvious next move is remembering a user's past corrections for the same food.
 9. **Lighthouse and axe in CI**, so the accessibility and performance claims are enforced rather than asserted.
 
 ---

@@ -1,9 +1,10 @@
 'use client';
 
-import { BadgeCheck, Loader2, Search, Users } from 'lucide-react';
+import { BadgeCheck, Camera, Loader2, Search, Users } from 'lucide-react';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { logMeal } from '@/app/actions/logs';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -36,12 +37,15 @@ export function FoodSheet({
   open,
   onClose,
   onLogged,
+  onScan,
   recentFoods,
   timezone,
 }: {
   open: boolean;
   onClose: () => void;
   onLogged: (outcome: LogOutcome) => void;
+  /** Hands off to the camera sheet. */
+  onScan: () => void;
   recentFoods: RecentFood[];
   timezone: string;
 }) {
@@ -169,6 +173,11 @@ export function FoodSheet({
             ))}
           </Select>
         </div>
+
+        <Button type="button" variant="outline" size="touch" onClick={onScan} className="w-full">
+          <Camera aria-hidden />
+          Scan a barcode or photograph it
+        </Button>
 
         {recentFoods.length > 0 && !hasQuery && (
           <section aria-labelledby="recent-foods">

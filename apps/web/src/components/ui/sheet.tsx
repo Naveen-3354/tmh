@@ -31,6 +31,17 @@ export function Sheet({
   const titleId = useId();
   const descriptionId = useId();
 
+  /**
+   * True while *we* are closing the dialog, rather than the user.
+   *
+   * `dialog.close()` fires the same `close` event as pressing Escape, so
+   * without this flag a programmatic close is indistinguishable from a
+   * dismissal — and calling `onClose` for it breaks any sheet-to-sheet
+   * handoff, because closing the first sheet clears the state that opened
+   * the second one.
+   */
+  const closingProgrammatically = useRef(false);
+
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
@@ -38,17 +49,26 @@ export function Sheet({
     if (open && !dialog.open) {
       dialog.showModal();
     } else if (!open && dialog.open) {
+      closingProgrammatically.current = true;
       dialog.close();
     }
   }, [open]);
+
+  const handleDismiss = () => {
+    if (closingProgrammatically.current) {
+      closingProgrammatically.current = false;
+      return;
+    }
+    onClose();
+  };
 
   return (
     <dialog
       ref={ref}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
-      onClose={onClose}
-      onCancel={onClose}
+      onClose={handleDismiss}
+      onCancel={handleDismiss}
       onClick={(event) => {
         // Clicking the backdrop closes; clicking the panel must not.
         if (event.target === ref.current) onClose();

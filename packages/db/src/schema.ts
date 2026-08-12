@@ -94,6 +94,15 @@ export const profiles = pgTable(
     activityLevel: activityLevelEnum('activity_level').default('lightly_active').notNull(),
     weightGoal: weightGoalEnum('weight_goal').default('maintain').notNull(),
     onboardingCompletedAt: timestamp('onboarding_completed_at', { withTimezone: true }),
+    /**
+     * Opt-in for sending a food photo to the recognition provider.
+     *
+     * Defaults to false and stays false until the user explicitly agrees.
+     * Brief §8 says lookups send query terms only; a photo is a real
+     * exception to that, so it is never made on the user's behalf. Barcode
+     * scanning is unaffected — it runs on-device and needs no consent.
+     */
+    photoRecognitionEnabled: boolean('photo_recognition_enabled').default(false).notNull(),
     /** Marks the seeded demo account so it can be reset or excluded. */
     isDemo: boolean('is_demo').default(false).notNull(),
     ...auditColumns,

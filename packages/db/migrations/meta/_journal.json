@@ -15,6 +15,13 @@
       "when": 1786371194486,
       "tag": "0001_rls_and_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786509864510,
+      "tag": "0002_photo_recognition_opt_in",
+      "breakpoints": true
     }
   ]
 }

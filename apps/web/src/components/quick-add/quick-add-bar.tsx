@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import type { LogOutcome } from '@tmh/shared';
 
 import { ActivitySheet } from './activity-sheet';
+import { CameraSheet } from './camera-sheet';
 import { FoodSheet } from './food-sheet';
 import { MoodSheet } from './mood-sheet';
 import { MoreSheet } from './more-sheet';
@@ -17,7 +18,7 @@ import { WaterSheet } from './water-sheet';
 import type { RecentActivity, RecentFood } from '@/lib/queries/recent';
 import type { DoseToday } from '@/lib/queries/recent';
 
-export type SheetName = 'water' | 'food' | 'activity' | 'mood' | 'more' | null;
+export type SheetName = 'water' | 'food' | 'activity' | 'mood' | 'more' | 'camera' | null;
 
 /**
  * The primary logging surface.
@@ -31,11 +32,15 @@ export function QuickAddBar({
   recentActivities,
   doses,
   timezone,
+  photoRecognitionAvailable,
+  photoRecognitionEnabled,
 }: {
   recentFoods: RecentFood[];
   recentActivities: RecentActivity[];
   doses: DoseToday[];
   timezone: string;
+  photoRecognitionAvailable: boolean;
+  photoRecognitionEnabled: boolean;
 }) {
   const [sheet, setSheet] = useState<SheetName>(null);
   const [, startTransition] = useTransition();
@@ -126,9 +131,21 @@ export function QuickAddBar({
         open={sheet === 'food'}
         onClose={() => setSheet(null)}
         onLogged={handleOutcome}
+        onScan={() => setSheet('camera')}
         recentFoods={recentFoods}
         timezone={timezone}
       />
+      {/* Mounted only while open, so it starts from clean state and always
+          releases the camera when dismissed. */}
+      {sheet === 'camera' && (
+        <CameraSheet
+          open
+          onClose={() => setSheet(null)}
+          onLogged={handleOutcome}
+          photoRecognitionAvailable={photoRecognitionAvailable}
+          photoRecognitionEnabled={photoRecognitionEnabled}
+        />
+      )}
       <ActivitySheet
         open={sheet === 'activity'}
         onClose={() => setSheet(null)}

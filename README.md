@@ -12,7 +12,7 @@ Built as an MVP to demonstrate the feature set and the architecture.
 
 | | |
 |---|---|
-| **Log** | Activity (MET-based calorie estimates), nutrition (USDA + Open Food Facts search, barcodes), sleep, water, vitals, mood & symptoms, medication adherence |
+| **Log** | Activity (MET-based calorie estimates), nutrition (USDA + Open Food Facts search, **camera barcode scanning**, optional photo identification), sleep, water, vitals, mood & symptoms, medication adherence |
 | **See** | Daily rings, 7/30/90-day charts, streaks, and rule-based observations about your own data |
 | **Own** | Full JSON/CSV export, CSV import, real account deletion |
 | **Connect** | MCP server over hosted HTTP and local stdio — 12 tools, 3 resources, 3 prompts |

@@ -171,6 +171,8 @@ export default async function TodayPage() {
         recentActivities={recentActivities}
         doses={doses}
         timezone={summary.timezone}
+        photoRecognitionAvailable={Boolean(process.env.GEMINI_API_KEY)}
+        photoRecognitionEnabled={profile.photoRecognitionEnabled}
       />
     </>
   );

@@ -50,6 +50,17 @@ function sourceFiles(dir) {
   return out;
 }
 
+/**
+ * A syntactically valid npm package name.
+ *
+ * Needed because the patterns below also match English prose — a comment
+ * reading `indistinguishable from "it just does not work"` looks exactly like
+ * an import to a regex. Package names can never contain a space, so validating
+ * the shape kills that entire class of false positive without having to strip
+ * comments (which would in turn mangle any string containing `//`).
+ */
+const PACKAGE_NAME = /^(?:@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
+
 /** Bare specifiers from `from '…'`, side-effect `import '…'`, and `require('…')`. */
 function importsIn(source) {
   const specifiers = new Set();
@@ -67,6 +78,7 @@ function importsIn(source) {
       const parts = specifier.split('/');
       const name = specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
       if (BUILTINS.has(name)) continue;
+      if (!PACKAGE_NAME.test(name)) continue;
       specifiers.add(name);
     }
   }
