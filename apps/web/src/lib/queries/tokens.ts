@@ -3,7 +3,7 @@ import 'server-only';
 import { apiTokens } from '@tmh/db';
 import { desc } from 'drizzle-orm';
 
-import { queryAsUser } from '../auth';
+import { onScoped, type UserScopedDatabase } from '../auth';
 
 export interface TokenListItem {
   id: string;
@@ -16,8 +16,8 @@ export interface TokenListItem {
 }
 
 /** Tokens for the connections screen. The hash is never selected. */
-export async function listApiTokens(): Promise<TokenListItem[]> {
-  return queryAsUser(async (db) =>
+export async function listApiTokens(scoped?: UserScopedDatabase): Promise<TokenListItem[]> {
+  return onScoped(scoped, async (db) =>
     db
       .select({
         id: apiTokens.id,

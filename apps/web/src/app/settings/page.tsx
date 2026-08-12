@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { setPhotoRecognition } from '@/app/actions/preferences';
+import { queryAsUser } from '@/lib/auth';
 import { AppHeader } from '@/components/app-header';
 import { MedicalDisclaimer } from '@/components/medical-disclaimer';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -23,7 +24,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsPage() {
-  const [{ profile, goals }, tokens] = await Promise.all([getProfileAndGoals(), listApiTokens()]);
+  // One transaction for both reads; see the note in today/page.tsx.
+  const { profile, goals, tokens } = await queryAsUser(async (db) => {
+    const [profileAndGoals, apiTokens] = await Promise.all([
+      getProfileAndGoals(db),
+      listApiTokens(db),
+    ]);
+    return { ...profileAndGoals, tokens: apiTokens };
+  });
   if (!profile) redirect('/login');
   if (!profile.onboardingCompletedAt) redirect('/onboarding');
 

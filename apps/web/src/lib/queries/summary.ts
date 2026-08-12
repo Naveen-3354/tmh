@@ -14,7 +14,7 @@ import { dayRangeUtc, toDayKey, type DayKey } from '@tmh/shared';
 import { and, desc, gte, lt, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 
-import { queryAsUser } from '../auth';
+import { onScoped, type UserScopedDatabase } from '../auth';
 
 export interface DailySummary {
   dayKey: DayKey;
@@ -35,8 +35,11 @@ export interface DailySummary {
  * local belongs to that local day regardless of where UTC happens to be — and
  * a DST day is 23 or 25 hours wide rather than a hard-coded 24.
  */
-export async function getDailySummary(requestedDay?: DayKey): Promise<DailySummary> {
-  return queryAsUser(async (db) => {
+export async function getDailySummary(
+  requestedDay?: DayKey,
+  scoped?: UserScopedDatabase,
+): Promise<DailySummary> {
+  return onScoped(scoped, async (db) => {
     const [profileRow] = await db.select({ timezone: profiles.timezone }).from(profiles).limit(1);
     const timezone = profileRow?.timezone ?? 'UTC';
 

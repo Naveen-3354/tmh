@@ -4,7 +4,7 @@ import { activityLogs, foodEntries, medicationEvents, medications } from '@tmh/d
 import { dayRangeUtc, toDayKey, zonedWallClockToUtc } from '@tmh/shared';
 import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
 
-import { queryAsUser } from '../auth';
+import { onScoped, type UserScopedDatabase } from '../auth';
 
 /**
  * "Recent" lists exist to make the repeat case one tap.
@@ -32,8 +32,11 @@ export interface RecentFood {
 }
 
 /** Distinct foods, most-logged first. */
-export async function getRecentFoods(limit = 8): Promise<RecentFood[]> {
-  return queryAsUser(async (db) => {
+export async function getRecentFoods(
+  limit = 8,
+  scoped?: UserScopedDatabase,
+): Promise<RecentFood[]> {
+  return onScoped(scoped, async (db) => {
     const rows = await db
       .select({
         name: foodEntries.name,
@@ -74,8 +77,11 @@ export interface RecentActivity {
 }
 
 /** Distinct activities, most-logged first, with the typical duration. */
-export async function getRecentActivities(limit = 6): Promise<RecentActivity[]> {
-  return queryAsUser(async (db) => {
+export async function getRecentActivities(
+  limit = 6,
+  scoped?: UserScopedDatabase,
+): Promise<RecentActivity[]> {
+  return onScoped(scoped, async (db) => {
     return db
       .select({
         activitySlug: activityLogs.activitySlug,
@@ -106,11 +112,14 @@ export interface DoseToday {
  * Schedule times are stored as local "HH:MM" and resolved against the
  * profile's timezone here, so a dose stays at 9am after a DST change.
  */
-export async function getDosesToday(timezone: string): Promise<DoseToday[]> {
+export async function getDosesToday(
+  timezone: string,
+  scoped?: UserScopedDatabase,
+): Promise<DoseToday[]> {
   const dayKey = toDayKey(new Date(), timezone);
   const { start, end } = dayRangeUtc(dayKey, timezone);
 
-  return queryAsUser(async (db) => {
+  return onScoped(scoped, async (db) => {
     const meds = await db
       .select({
         id: medications.id,

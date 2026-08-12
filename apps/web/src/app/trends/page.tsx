@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { AppHeader } from '@/components/app-header';
 import { MetricChart } from '@/components/charts/metric-chart';
 import { MedicalDisclaimer } from '@/components/medical-disclaimer';
+import { queryAsUser } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { getProfile } from '@/lib/queries/profile';
 import { getTrends, parseTrendWindow, TREND_WINDOWS } from '@/lib/queries/trends';
@@ -28,14 +29,20 @@ const METRIC_COLORS: Record<Insight['metric'], string> = {
 };
 
 export default async function TrendsPage({ searchParams }: PageProps<'/trends'>) {
-  const profile = await getProfile();
-  if (!profile) redirect('/login');
-  if (!profile.onboardingCompletedAt) redirect('/onboarding');
-
   const params = await searchParams;
   const rawRange = typeof params.range === 'string' ? params.range : undefined;
   const windowDays = parseTrendWindow(rawRange);
-  const trends = await getTrends(windowDays);
+
+  // Profile and trends share one transaction; see the note in today/page.tsx.
+  const data = await queryAsUser(async (db) => {
+    const profile = await getProfile(db);
+    if (!profile) return null;
+    return { profile, trends: await getTrends(windowDays, db) };
+  });
+
+  if (!data) redirect('/login');
+  const { profile, trends } = data;
+  if (!profile.onboardingCompletedAt) redirect('/onboarding');
 
   const series = (pick: (day: (typeof trends.days)[number]) => number | null) =>
     trends.days.map((day) => ({ day: day.day, value: pick(day) }));

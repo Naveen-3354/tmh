@@ -25,7 +25,7 @@ import {
 } from '@tmh/shared';
 import { and, eq, gte, sql } from 'drizzle-orm';
 
-import { queryAsUser } from '../auth';
+import { onScoped, type UserScopedDatabase } from '../auth';
 
 export const TREND_WINDOWS = [7, 30, 90] as const;
 export type TrendWindow = (typeof TREND_WINDOWS)[number];
@@ -61,8 +61,11 @@ export interface TrendsData {
  * UTC. Gap-filling matters: a missing day must render as an absent point, not
  * as a zero, or every chart would show phantom crashes on unlogged days.
  */
-export async function getTrends(windowDays: TrendWindow): Promise<TrendsData> {
-  return queryAsUser(async (db) => {
+export async function getTrends(
+  windowDays: TrendWindow,
+  scoped?: UserScopedDatabase,
+): Promise<TrendsData> {
+  return onScoped(scoped, async (db) => {
     const [profileRow] = await db.select({ timezone: profiles.timezone }).from(profiles).limit(1);
     const timezone = profileRow?.timezone ?? 'UTC';
 

@@ -69,10 +69,18 @@ export async function withUserContext<T>(
   const claims = JSON.stringify({ sub: userId, role: 'authenticated' });
 
   return database().transaction(async (tx) => {
-    // Order matters: publish the claim first, then drop privileges. Both are
-    // transaction-local and unwind automatically on commit or rollback.
-    await tx.execute(sql`select set_config('request.jwt.claims', ${claims}, true)`);
-    await tx.execute(sql`set local role authenticated`);
+    // Both settings in a single statement, deliberately.
+    //
+    // `SET LOCAL ROLE authenticated` and `set_config('role', ..., true)` are
+    // the same thing — SET ROLE is implemented as the `role` GUC — so this is
+    // equivalent to the two-statement version but costs one network round trip
+    // instead of two. Against a database in another region that difference is
+    // ~50ms on *every* query in the app, which is worth more than the symmetry.
+    //
+    // Both are transaction-local and unwind on commit or rollback.
+    await tx.execute(
+      sql`select set_config('request.jwt.claims', ${claims}, true), set_config('role', 'authenticated', true)`,
+    );
     return run(tx);
   });
 }

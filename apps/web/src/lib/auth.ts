@@ -1,4 +1,6 @@
 import { withUserContext, type UserScopedDatabase } from '@tmh/db';
+
+export type { UserScopedDatabase };
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 
@@ -43,4 +45,22 @@ export async function requireUser(): Promise<AuthenticatedUser> {
 export async function queryAsUser<T>(run: (db: UserScopedDatabase) => Promise<T>): Promise<T> {
   const user = await requireUser();
   return withUserContext(user.id, run);
+}
+
+/**
+ * Run a query on an existing scoped connection, or open a new one.
+ *
+ * Every `queryAsUser` call is its own transaction, and a transaction costs
+ * BEGIN + context + query + COMMIT round trips. Against a database in another
+ * region that measured at ~264ms *each*, so a page making five independent
+ * calls paid over a second before rendering anything.
+ *
+ * Passing an already-open connection lets a page batch its reads into one
+ * transaction while each query function stays independently callable.
+ */
+export async function onScoped<T>(
+  scoped: UserScopedDatabase | undefined,
+  run: (db: UserScopedDatabase) => Promise<T>,
+): Promise<T> {
+  return scoped ? run(scoped) : queryAsUser(run);
 }

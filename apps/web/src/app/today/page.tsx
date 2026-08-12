@@ -6,6 +6,7 @@ import { ActivityRings } from '@/components/activity-rings';
 import { AppHeader } from '@/components/app-header';
 import { MedicalDisclaimer } from '@/components/medical-disclaimer';
 import { QuickAddBar } from '@/components/quick-add/quick-add-bar';
+import { queryAsUser } from '@/lib/auth';
 import { getProfile } from '@/lib/queries/profile';
 import { getDosesToday, getRecentActivities, getRecentFoods } from '@/lib/queries/recent';
 import { getDailySummary, type DailySummary } from '@/lib/queries/summary';
@@ -37,17 +38,31 @@ function formatDuration(minutes: number): string {
 }
 
 export default async function TodayPage() {
-  const profile = await getProfile();
+  /**
+   * Every read for this page in a single transaction.
+   *
+   * These used to be five separate `queryAsUser` calls, and each one paid its
+   * own BEGIN, context setup and COMMIT — around 264ms apiece against a
+   * database in another region, so over a second of pure round-trip cost
+   * before anything rendered. One transaction pays that once.
+   */
+  const data = await queryAsUser(async (db) => {
+    const profile = await getProfile(db);
+    if (!profile) return null;
 
-  if (!profile) redirect('/login');
+    const [summary, recentFoods, recentActivities, doses] = await Promise.all([
+      getDailySummary(undefined, db),
+      getRecentFoods(8, db),
+      getRecentActivities(6, db),
+      getDosesToday(profile.timezone, db),
+    ]);
+
+    return { profile, summary, recentFoods, recentActivities, doses };
+  });
+
+  if (!data) redirect('/login');
+  const { profile, summary, recentFoods, recentActivities, doses } = data;
   if (!profile.onboardingCompletedAt) redirect('/onboarding');
-
-  const [summary, recentFoods, recentActivities, doses] = await Promise.all([
-    getDailySummary(),
-    getRecentFoods(),
-    getRecentActivities(),
-    getDosesToday(profile.timezone),
-  ]);
 
   const rings = [
     {
